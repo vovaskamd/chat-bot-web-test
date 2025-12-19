@@ -1,0 +1,22 @@
+{
+  "name": "chat-bot-web",
+  "version": "1.0.0",
+  "description": "Static web chat bot with OpenAI backend proxy",
+  "main": "server.js",
+  "scripts": {
+    "start": "NODE_OPTIONS=--openssl-legacy-provider node server.js",
+    "dev": "NODE_OPTIONS=--openssl-legacy-provider node server.js"
+  },
+  "keywords": [
+    "chat",
+    "openai",
+    "express"
+  ],
+  "author": "Antigravity",
+  "license": "ISC",
+  "dependencies": {
+    "dotenv": "^17.2.3",
+    "express": "^5.2.1",
+    "googleapis": "^169.0.0"
+  }
+}

@@ -1,0 +1,9 @@
+node_modules
+.env
+npm-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+leads.jsonl
+logs.jsonl
+threads/
+credentials/
