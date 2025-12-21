@@ -1,0 +1,176 @@
+{
+    "service": "magnets",
+    "description": "מגנטים הם צילום באירוע עם הדפסה מיידית של תמונות בפורמט מגנטי. השירות מיועד לזרימת אורחים ולא לצילום סטילס מבוים.",
+    "principles": [
+        "ההדפסה מתבצעת במהלך האירוע",
+        "כמות המגנטים אינה קבועה ואינה מובטחת",
+        "ההגבלה היא לפי זמן ולא לפי כמות"
+    ],
+    "formats": {
+        "printing_type": "הדפסת תרמית",
+        "max_print_sheet_cm": [
+            15,
+            20
+        ],
+        "magnet_sizes_cm": [
+            {
+                "size": [
+                    7.5,
+                    10
+                ],
+                "label": "סטנדרט"
+            },
+            {
+                "size": [
+                    10,
+                    15
+                ]
+            },
+            {
+                "size": [
+                    15,
+                    15
+                ]
+            },
+            {
+                "size": [
+                    15,
+                    20
+                ],
+                "label": "מגנט גדול (סלנג פנימי)"
+            }
+        ]
+    },
+    "workflow": {
+        "magnet_production": [
+            "צילום באירוע",
+            "עיבוד במחשב",
+            "הדפסה תרמית",
+            "הדבקה על יריעת מגנט",
+            "חיתוך לפי מידה",
+            "תלייה על לוח מגנטים באולם"
+        ],
+        "responsibility_end": "האחריות מסתיימת לאחר תליית המגנטים על הלוח"
+    },
+    "delivery": {
+        "photo_storage": "ענן פרטי",
+        "delivery_method": "קישור להורדה",
+        "max_delivery_time_workdays": 21
+    },
+    "on_site_requirements": {
+        "arrival_time_minutes_before_event": 30,
+        "table_min_length_meters": 1,
+        "electricity_required": true,
+        "electricity_max_distance_meters": 5,
+        "no_electricity_policy": {
+            "printing": "עצירת הדפסה",
+            "exception": "אירוע רב-שלבי – ניתן להדפיס בשלב מאוחר יותר (למשל במסעדה)"
+        }
+    },
+    "limitations": {
+        "not_stills_photography": true,
+        "no_artistic_or_staged_photos": true,
+        "service_type": "שירות מבוסס זרימה ודינמיקה של האירוע"
+    },
+    "team": {
+        "default_staff_for_up_to_guests": 100,
+        "default_staff_count": 1,
+        "extra_staff": {
+            "allowed": true,
+            "can_be_added_after_closing": true,
+            "conditions": [
+                "בדיקת זמינות ביומנים",
+                "אישור אישי ממני"
+            ],
+            "role": [
+                "עיבוד",
+                "הדפסה",
+                "חיתוך"
+            ],
+            "cost": "תוספת תשלום (עודף מגנטים)"
+        }
+    },
+    "expectations": {
+        "magnet_count": {
+            "fixed": false,
+            "depends_on": [
+                "דינמיקת האירוע",
+                "זרימת האורחים"
+            ]
+        },
+        "more_guests_than_expected": "נבחן לפי עומס ולא לפי כמות",
+        "longer_event": "נבחן בנפרד"
+    },
+    "frame": {
+        "definition": "המסגרת היא עיצוב גרפי שמוכן בעורך גרפי על מחשב לפני ההדפסה. המסגרת מוטמעת בקובץ התמונה ומודפסת כחלק בלתי נפרד מהמגנט.",
+        "is_option": true,
+        "de_facto_standard": true,
+        "role_in_printing": "המסגרת היא חלק ממהות ההדפסה עצמה ואינה מודבקת פיזית לאחר ההדפסה",
+        "design_process": [
+            "עיצוב גרפי במחשב",
+            "שילוב המסגרת בקובץ התמונה",
+            "הדפסה תרמית של התמונה עם המסגרת כמקשה אחת"
+        ],
+        "design_limits": [
+            "הגבלה לפי גודל המגנט בלבד",
+            "מומלץ להימנע מאלמנטים גרפיים גדולים בחלק העליון כדי לא להסתיר פנים"
+        ],
+        "preparation_time": [
+            "במהלך האירוע",
+            "לפני האירוע לפי בקשת הלקוח"
+        ],
+        "client_self_design": {
+            "allowed": true,
+            "can_request_template_or_sizes": true
+        },
+        "standard_content": [
+            "כותרת האירוע",
+            "קליפארט",
+            "תאריך",
+            "לוגו קטן או מספר טלפון"
+        ]
+    },
+    "quality": {
+        "normal_conditions": "שמירה לאורך זמן בתנאים רגילים",
+        "guarantee": "אין אחריות לנזק מכוון או שימוש לא סביר"
+    },
+    "wooden_blocks": {
+        "can_be_ordered_separately": true,
+        "sizes_cm": [
+            [
+                10,
+                10
+            ],
+            [
+                10,
+                15
+            ],
+            [
+                15,
+                15
+            ],
+            [
+                15,
+                20
+            ]
+        ],
+        "standard_size_cm": [
+            10,
+            15
+        ],
+        "production_workflow": [
+            "צילום",
+            "עיבוד",
+            "הדפסה",
+            "הדבקה על בלוק",
+            "חיתוך קצוות",
+            "הצבה באולם"
+        ],
+        "pricing_basis": [
+            "מינימום הזמנה",
+            "כמות בלוקים שסוכמה מראש",
+            "איש צוות נוסף (אופציונלי)"
+        ]
+    },
+    "pricing": {}
+}

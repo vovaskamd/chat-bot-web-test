@@ -1,0 +1,12 @@
+{
+    "business_context": {
+        "country": "Israel",
+        "coverage_main": "בעיקר מחיפה עד באר שבע",
+        "coverage_exception": "במקרים חריגים בכל הארץ",
+        "excluded": [
+            "המגזר הערבי"
+        ],
+        "office": false,
+        "work_mode": "on_site_only"
+    }
+}
