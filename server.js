@@ -26,8 +26,13 @@ const LOG_PATH = path.join(__dirname, "logs.jsonl");
 const THREADS_DIR = path.join(__dirname, "threads");
 const KB_PATH = path.join(__dirname, "data", "kb.json");
 const KANBAN_PATH = path.join(__dirname, "data", "kanban.json");
+const TWILIO_THREADS_PATH = path.join(__dirname, "data", "twilio_threads.json");
 const GOOGLE_CREDENTIALS_PATH = process.env.GOOGLE_APPLICATION_CREDENTIALS;
 const CALENDAR_ID = process.env.CALENDAR_ID;
+const CORS_ORIGINS = (process.env.CORS_ORIGINS || "")
+  .split(",")
+  .map((origin) => origin.trim())
+  .filter(Boolean);
 
 if (!OPENAI_API_KEY) {
   console.error("Missing OPENAI_API_KEY in .env");
@@ -36,8 +41,24 @@ if (!OPENAI_API_KEY) {
 
 let SYSTEM_PROMPT = "";
 
+app.use((req, res, next) => {
+  const origin = req.headers.origin;
+  if (CORS_ORIGINS.length === 0) {
+    res.setHeader("Access-Control-Allow-Origin", "*");
+  } else if (origin && CORS_ORIGINS.includes(origin)) {
+    res.setHeader("Access-Control-Allow-Origin", origin);
+    res.setHeader("Vary", "Origin");
+  }
+  res.setHeader("Access-Control-Allow-Methods", "GET,POST,OPTIONS");
+  res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization");
+  if (req.method === "OPTIONS") {
+    return res.status(204).end();
+  }
+  return next();
+});
+
+app.use(express.urlencoded({ extended: false }));
 app.use(express.json({ limit: "2mb" }));
-app.use(express.static(path.join(__dirname), { extensions: ["html"] }));
 
 const toChatMessages = (messages = []) =>
   messages
@@ -83,6 +104,19 @@ const mergeDeep = (base = {}, extra = {}) => {
   return output;
 };
 
+const safeReadJson = async (filePath, fallback) => {
+  const raw = await fs.promises.readFile(filePath, "utf8").catch(() => "");
+  if (!raw.trim()) return fallback;
+  try {
+    return JSON.parse(raw);
+  } catch (err) {
+    return fallback;
+  }
+};
+
+const writeJson = async (filePath, data) =>
+  fs.promises.writeFile(filePath, `${JSON.stringify(data, null, 2)}\n`);
+
 const logEvent = async (record = {}) => {
   try {
     const entry = { ...record, timestamp: new Date().toISOString() };
@@ -99,6 +133,9 @@ const ensureFiles = async () => {
       fs.promises.open(LEADS_PATH, "a").then((handle) => handle.close()),
       fs.promises.mkdir(THREADS_DIR, { recursive: true })
     ]);
+    await fs.promises
+      .access(TWILIO_THREADS_PATH, fs.constants.F_OK)
+      .catch(() => writeJson(TWILIO_THREADS_PATH, {}));
 
     const dataDir = path.join(__dirname, "data");
     const files = await fs.promises.readdir(dataDir).catch(() => []);
@@ -147,6 +184,19 @@ const writeThreadLine = async (threadId, line) => {
     console.error("Thread file write error:", err);
   }
 };
+
+const escapeXml = (value) =>
+  String(value)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/\"/g, "&quot;")
+    .replace(/'/g, "&apos;");
+
+const buildTwimlMessage = (text) =>
+  `<?xml version="1.0" encoding="UTF-8"?><Response><Message>${escapeXml(
+    text
+  )}</Message></Response>`;
 
 const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
@@ -364,6 +414,17 @@ const createThread = async () => {
   return data.id;
 };
 
+const getTwilioThreadId = async (from) => {
+  const key = String(from || "").trim();
+  if (!key) return createThread();
+  const map = await safeReadJson(TWILIO_THREADS_PATH, {});
+  if (map[key]) return map[key];
+  const threadId = await createThread();
+  map[key] = threadId;
+  await writeJson(TWILIO_THREADS_PATH, map);
+  return threadId;
+};
+
 const postUserMessage = async (threadId, message) => {
   const response = await fetch(`${OPENAI_API_BASE}/threads/${threadId}/messages`, {
     method: "POST",
@@ -471,6 +532,57 @@ app.post("/api/chat", async (req, res) => {
   } catch (err) {
     console.error("Chat API error:", err);
     res.status(500).json({ error: "server_error" });
+  }
+});
+
+app.post("/api/twilio", async (req, res) => {
+  try {
+    const payload = req.body || {};
+    const message = payload.Body || payload.body || "";
+    const from = payload.From || payload.from || "";
+    const to = payload.To || payload.to || "";
+    const messageSid = payload.MessageSid || payload.messageSid || "";
+
+    if (!message || !from) {
+      await logEvent({ type: "twilio_error", payload, reason: "missing_fields" });
+      return res.status(400).type("text/xml").send(buildTwimlMessage("Missing message."));
+    }
+
+    const assistantId = await ensureAssistant();
+    const threadId = await getTwilioThreadId(from);
+    const kbFacts = searchKb(message, 3);
+    const enriched = kbFacts.length ? `${message}\n\n[Контекст]: ${kbFacts.join(" • ")}` : message;
+
+    await logEvent({
+      type: "twilio_inbound",
+      threadId,
+      from,
+      to,
+      messageSid,
+      content: message,
+      kbFacts
+    });
+    await writeThreadLine(threadId, `twilio_from: ${from} message: ${message}`);
+    if (kbFacts.length) {
+      await writeThreadLine(threadId, `kb: ${kbFacts.join(" | ")}`);
+    }
+
+    await postUserMessage(threadId, enriched);
+    const runId = await runAssistant(threadId, assistantId);
+    await pollRun(threadId, runId);
+    const reply = await fetchLatestReply(threadId);
+    const safeReply = reply || "קיבלתי. תן לי רגע לבדוק ואחזור אליך.";
+
+    await logEvent({ type: "twilio_reply", threadId, content: safeReply });
+    await writeThreadLine(threadId, `assistant: ${safeReply}`);
+
+    res.type("text/xml").send(buildTwimlMessage(safeReply));
+  } catch (err) {
+    console.error("Twilio API error:", err);
+    res
+      .status(500)
+      .type("text/xml")
+      .send(buildTwimlMessage("יש תקלה זמנית. נחזור אליך בקרוב."));
   }
 });
 
@@ -615,7 +727,9 @@ app.get("/api/kb", (req, res) => {
   }
 });
 
-app.use((req, res) => res.sendFile(path.join(__dirname, "index.html")));
+app.use((req, res) => {
+  res.status(404).json({ error: "not_found" });
+});
 
 ensureFiles().then(() => {
   app.listen(PORT, () => {
