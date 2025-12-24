@@ -5,5 +5,7 @@ yarn-error.log*
 pnpm-debug.log*
 leads.jsonl
 logs.jsonl
+logs/
+.DS_Store
 threads/
 credentials/
