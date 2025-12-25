@@ -16,8 +16,11 @@ const statusDot = document.getElementById("status-dot");
 
 const rawApiBase = typeof window !== "undefined" ? String(window.API_BASE || "") : "";
 const fallbackApiBase =
-  typeof window !== "undefined" && window.location?.protocol === "file:"
-    ? "http://localhost:3000"
+  typeof window !== "undefined" && window.location
+    ? window.location.protocol === "file:" ||
+      (window.location.hostname === "localhost" && window.location.port !== "3000")
+      ? "http://localhost:3000"
+      : ""
     : "";
 const API_BASE = (rawApiBase || fallbackApiBase).replace(/\/$/, "");
 const apiUrl = (path) => (API_BASE ? `${API_BASE}${path}` : path);
